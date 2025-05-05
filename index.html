@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Voice Assistant</title>
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #f5f5f5;
+            --primary-color: #7c4dff;
+            --secondary-color: #b388ff;
+            --surface-color: #1e1e1e;
+            --error-color: #cf6679;
+            --success-color: #03dac6;
+            --button-hover: #6200ea;
+            --code-bg: #282c34;
+            --interim-color: #888888;
+        }
+
+        .light-theme {
+            --bg-color: #f5f5f5;
+            --text-color: #121212;
+            --primary-color: #6200ea;
+            --secondary-color: #7c4dff;
+            --surface-color: #ffffff;
+            --error-color: #b00020;
+            --success-color: #018786;
+            --button-hover: #7c4dff;
+            --code-bg: #f5f5f5;
+            --interim-color: #666666;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+        
+        .final-transcript {
+            min-height: 24px;
+        }
+        
+        .interim-transcript {
+            color: var(--interim-color);
+            font-style: italic;
+            min-height: 24px;
+        }
+        
+        .error {
+            color: var(--error-color);
+        }
+
+        header {
+            background-color: var(--surface-color);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #theme-toggle {
+            background-color: transparent;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+        }
+
+        #theme-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        main {
+            flex: 1;
+            padding: 1rem;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .status {
+            text-align: center;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        .message-container {
+            margin-top: 1rem;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .message-header {
+            padding: 0.8rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message-content {
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        /* Markdown Styling */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4 {
+            margin-top: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .message-content p {
+            margin-bottom: 1rem;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .message-content strong {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        .message-content a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .message-content a:hover {
+            text-decoration: underline;
+        }
+
+        .message-content pre {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: var(--code-bg);
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .message-content code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+        }
+
+        .message-content p code {
+            background-color: rgba(125, 125, 125, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--error-color);
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 600px) {
+            header {
+                padding: 0.8rem;
+            }
+
+            .logo {
+                font-size: 1rem;
+            }
+
+            button {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            main {
+                padding: 0.5rem;
+            }
+        }
+
+        .response-time {
+            font-size: 0.8rem;
+            color: var(--text-color);
+            opacity: 0.7;
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: auto;
+        }
+
+        .model-indicator {
+            font-size: 0.8rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span>Claude Voice Assistant</span>
+        </div>
+        <div class="controls">
+            <button id="theme-toggle">
+                <span id="theme-icon">🌙</span>
+            </button>
+            <button id="start-button">
+                Start Recording
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="status" id="status">Ready to assist you. Click "Start Recording" to begin.</div>
+        <div id="messages-container"></div>
+    </main>
+
+    <footer>
+        <div class="model-indicator">Using Claude 3.7 Sonnet via Puter.js</div>
+        <div>Live transcription and AI responses powered by Puter.js</div>
+        <div class="model-info">Currently using model: <span id="current-model">claude-3-7-sonnet</span></div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const startButton = document.getElementById('start-button');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const statusElement = document.getElementById('status');
+            const messagesContainer = document.getElementById('messages-container');
+
+            // State variables
+            let mediaRecorder;
+            let audioChunks = [];
+            let isRecording = false;
+            let isProcessing = false;
+            let stream = null;
+
+            // Theme toggle
+            themeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('light-theme');
+                if (document.body.classList.contains('light-theme')) {
+                    themeIcon.textContent = '☀️';
+                } else {
+                    themeIcon.textContent = '🌙';
+                }
+            });
+
+            // Initialize audio recorder
+            async function setupAudioRecorder() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = async () => {
+                        if (audioChunks.length === 0) return;
+                        
+                        // Process the recorded audio
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        processAudio(audioBlob);
+                    };
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error setting up audio recorder:', error);
+                    statusElement.textContent = 'Error: Could not access microphone. Please check permissions.';
+                    return false;
+                }
+            }
+
+            // Start/stop recording
+            startButton.addEventListener('click', async function() {
+                if (isProcessing) return;
+                
+                if (isRecording) {
+                    // Stop recording
+                    stopRecording();
+                } else {
+                    // Start recording
+                    if (!mediaRecorder) {
+                        const setupSuccess = await setupAudioRecorder();
+                        if (!setupSuccess) return;
+                    }
+                    
+                    // Initialize speech recognition if needed
+                    if (!recognition) {
+                        const speechSetupSuccess = setupSpeechRecognition();
+                        if (!speechSetupSuccess) {
+                            // If speech recognition fails, still allow audio recording
+                            statusElement.textContent = 'Live transcription not available, but recording will work.';
+                        }
+                    }
+                    
+                    startRecording();
+                }
+            });
+
+            function startRecording() {
+                // Start audio recording
+                audioChunks = [];
+                mediaRecorder.start();
+                
+                // Start speech recognition if available
+                if (recognition) {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.error('Error starting speech recognition:', e);
+                    }
+                }
+                
+                isRecording = true;
+                startButton.innerHTML = '<span class="recording-indicator"></span>Stop Recording';
+                statusElement.textContent = 'Recording... Speak clearly.';
+            }
+
+            function stopRecording() {
+                if (mediaRecorder && isRecording) {
+                    // Stop audio recording
+                    mediaRecorder.stop();
+                    
+                    // Stop speech recognition if available
+                    if (recognition) {
+                        try {
+                            recognition.stop();
+                        } catch (e) {
+                            console.error('Error stopping speech recognition:', e);
+                        }
+                    }
+                    
+                    isRecording = false;
+                    isProcessing = true;
+                    startButton.textContent = 'Processing...';
+                    startButton.disabled = true;
+                    statusElement.textContent = 'Processing your request...';
+                }
+            }
+
+            // Web Speech API for live transcription
+            let recognition;
+            let finalTranscript = '';
+            let interimTranscript = '';
+            let currentMessageId = null;
+
+            function setupSpeechRecognition() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    statusElement.textContent = 'Speech recognition not supported in this browser.';
+                    return false;
+                }
+
+                // Initialize speech recognition
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    finalTranscript = '';
+                    interimTranscript = '';
+                    
+                    // Create a new message container for live transcription
+                    currentMessageId = Date.now().toString();
+                    createLiveTranscriptionMessage(currentMessageId);
+                };
+
+                recognition.onresult = function(event) {
+                    interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+                    
+                    // Update the live transcription
+                    updateLiveTranscription(currentMessageId, finalTranscript, interimTranscript);
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    statusElement.textContent = `Error in speech recognition: ${event.error}`;
+                };
+
+                recognition.onend = function() {
+                    if (isRecording) {
+                        // If still recording, restart recognition (sometimes it stops automatically)
+                        recognition.start();
+                    }
+                };
+
+                return true;
+            }
+
+            // Process audio with Claude 3.7 Sonnet
+            async function processAudio(audioBlob) {
+                try {
+                    // Use the existing transcription from the speech recognition
+                    const transcription = finalTranscript || "No speech detected. Please try again.";
+                    
+                    if (!transcription || transcription === "No speech detected. Please try again.") {
+                        statusElement.textContent = 'No speech detected. Please try again.';
+                        
+                        // Update the message to show error
+                        const messageElement = document.getElementById(`message-${currentMessageId}`);
+                        if (messageElement) {
+                            messageElement.querySelector('.message-content').innerHTML = 
+                                '<p class="error">No speech detected. Please try again.</p>';
+                        }
+                        
+                        isProcessing = false;
+                        startButton.textContent = 'Start Recording';
+                        startButton.disabled = false;
+                        return;
+                    }
+                    
+                    // Update status
+                    statusElement.textContent = 'Sending to Claude...';
+                    
+                    // Update the message to show loading
+                    updateMessageToLoading(currentMessageId, transcription);
+                    
+                    // Process with Claude via Puter.js
+                    const startTime = Date.now();
+                    
+                    // Stream the response for better UX
+                    const response = await puter.ai.chat(transcription, {
+                        model: 'claude-3-7-sonnet',
+                        stream: true,
+                        system: "You are Claude, an AI assistant. Respond concisely but thoroughly. Format important details in **bold** text using markdown. If asked for code, provide properly formatted code snippets using markdown code blocks with language specification. Be helpful, accurate, and clear."
+                    });
+                    
+                    // Start collecting the streamed response
+                    let fullResponse = '';
+                    let responseStarted = false;
+                    
+                    for await (const part of response) {
+                        if (part?.text) {
+                            fullResponse += part.text;
+                            
+                            if (!responseStarted) {
+                                // Update message to start showing the response
+                                updateMessageToStreamingResponse(currentMessageId, transcription, fullResponse);
+                                responseStarted = true;
+                            } else {
+                                // Update just the response part
+                                updateStreamingResponse(currentMessageId, fullResponse);
+                            }
+                        }
+                    }
+                    
+                    // Calculate response time
+                    const responseTime = Math.round((Date.now() - startTime) / 100) / 10;
+                    
+                    // Finalize the response
+                    finalizeResponse(currentMessageId, responseTime);
+                    
+                } catch (error) {
+                    console.error('Error processing with Claude:', error);
+                    statusElement.textContent = 'Error processing your request. Please try again.';
+                    
+                    // Update the message to show error
+                    const messageElement = document.getElementById(`message-${currentMessageId}`);
+                    if (messageElement) {
+                        const responseContent = messageElement.querySelector('.claude-response');
+                        if (responseContent) {
+                            responseContent.innerHTML = 
+                                '<p class="error">Error connecting to Claude. Please try again.</p>';
+                        }
+                    }
+                } finally {
+                    // Reset state
+                    isProcessing = false;
+                    startButton.textContent = 'Start Recording';
+                    startButton.disabled = false;
+                }
+            }
+
+            // Create live transcription message
+            function createLiveTranscriptionMessage(id) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-container';
+                messageElement.id = `message-${id}`;
+                
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <div>Live Transcription</div>
+                    </div>
+                    <div class="message-content">
+                        <p class="final-transcript"></p>
+                        <p class="interim-transcript" style="color: gray; font-style: italic;"></p>
+                    </div>
+                `;
+                
+                messagesContainer.prepend(messageElement);
+            }
+
+            // Update the live transcription
+            function updateLiveTranscription(id, final, interim) {
+                const messageElement = document.getElementById(`message-${id}`);
+                if (!messageElement) return;
+                
+                const finalElement = messageElement.querySelector('.final-transcript');
+                const interimElement = messageElement.querySelector('.interim-transcript');
+                
+                if (finalElement) finalElement.textContent = final;
+                if (interimElement) interimElement.textContent = interim;
+            }
+
+            // Update message to loading state
+            function updateMessageToLoading(id, transcription) {
+                const messageElement = document.getElementById(`message-${id}`);
+                if (!messageElement) return;
+                
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <div>Your Question</div>
+                    </div>
+                    <div class="message-content">
+                        <p>${transcription}</p>
+                    </div>
+                    <div class="message-header">
+                        <div>Claude's Response</div>
+                    </div>
+                    <div class="message-content claude-response">
+                        <div class="loading">
+                            <div>Claude is thinking</div>
+                            <div class="loading-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Update message to start showing streaming response
+            function updateMessageToStreamingResponse(id, transcription, initialResponse) {
+                const messageElement = document.getElementById(`message-${id}`);
+                if (!messageElement) return;
+                
+                // Configure marked.js for syntax highlighting
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        if (lang && hljs.getLanguage(lang)) {
+                            return hljs.highlight(code, { language: lang }).value;
+                        }
+                        return hljs.highlightAuto(code).value;
+                    },
+                    breaks: true
+                });
+                
+                // Format the initial response
+                const formattedResponse = marked.parse(initialResponse);
+                
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <div>Your Question</div>
+                    </div>
+                    <div class="message-content">
+                        <p>${transcription}</p>
+                    </div>
+                    <div class="message-header">
+                        <div>Claude's Response</div>
+                    </div>
+                    <div class="message-content claude-response">
+                        ${formattedResponse}
+                    </div>
+                `;
+            }
+
+            // Update just the streaming response part
+            function updateStreamingResponse(id, fullResponse) {
+                const messageElement = document.getElementById(`message-${id}`);
+                if (!messageElement) return;
+                
+                const responseElement = messageElement.querySelector('.claude-response');
+                if (!responseElement) return;
+                
+                // Format the response
+                const formattedResponse = marked.parse(fullResponse);
+                responseElement.innerHTML = formattedResponse;
+                
+                // Scroll to bottom of the response
+                responseElement.scrollTop = responseElement.scrollHeight;
+            }
+
+            // Finalize the response with response time
+            function finalizeResponse(id, responseTime) {
+                const messageElement = document.getElementById(`message-${id}`);
+                if (!messageElement) return;
+                
+                // Add response time
+                const timeElement = document.createElement('div');
+                timeElement.className = 'response-time';
+                timeElement.textContent = `Response time: ${responseTime}s`;
+                messageElement.appendChild(timeElement);
+                
+                // Update status
+                statusElement.textContent = 'Ready for your next question.';
+            }
+
+            // Create loading message element
+            function createLoadingMessage(id) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-container';
+                messageElement.id = `message-${id}`;
+                
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <div>Recording</div>
+                    </div>
+                    <div class="loading">
+                        <div>Processing your message</div>
+                        <div class="loading-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                `;
+                
+                messagesContainer.prepend(messageElement);
+            }
+
+            // Update message with Claude's response
+            function updateMessageWithResponse(id, query, response, responseTime) {
+                const messageElement = document.getElementById(`message-${id}`);
+                if (!messageElement) return;
+                
+                // Configure marked.js for syntax highlighting
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        if (lang && hljs.getLanguage(lang)) {
+                            return hljs.highlight(code, { language: lang }).value;
+                        }
+                        return hljs.highlightAuto(code).value;
+                    },
+                    breaks: true
+                });
+                
+                // Format the response with markdown
+                const formattedResponse = marked.parse(response);
+                
+                // Update the message element
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <div>Your Question</div>
+                    </div>
+                    <div class="message-content">
+                        <p>${query}</p>
+                    </div>
+                    <div class="message-header">
+                        <div>Claude's Response</div>
+                    </div>
+                    <div class="message-content">
+                        ${formattedResponse}
+                    </div>
+                    <div class="response-time">
+                        Response time: ${responseTime}s
+                    </div>
+                `;
+                
+                // Update status
+                statusElement.textContent = 'Ready for your next question.';
+            }
+
+            // Initial setup
+            setupAudioRecorder();
+        });
+    </script>
+</body>
+</html>
