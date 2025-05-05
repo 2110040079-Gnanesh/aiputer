@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,8 @@
     <script src="https://js.puter.com/v2/"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
     <style>
         :root {
             --bg-color: #121212;
@@ -20,6 +22,8 @@
             --button-hover: #6200ea;
             --code-bg: #282c34;
             --interim-color: #888888;
+            --panel-bg: #1a1a1a;
+            --hover-bg: #2a2a2a;
         }
 
         .light-theme {
@@ -33,6 +37,8 @@
             --button-hover: #7c4dff;
             --code-bg: #f5f5f5;
             --interim-color: #666666;
+            --panel-bg: #e5e5e5;
+            --hover-bg: #d5d5d5;
         }
 
         * {
@@ -51,19 +57,121 @@
             flex-direction: column;
             line-height: 1.6;
         }
-        
+
+        /* Audio visualization */
+        .visualizer-container {
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .audio-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 100%;
+            padding: 0 5px;
+        }
+
+        .audio-bar {
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 2px 2px 0 0;
+            margin: 0 1px;
+            transition: height 0.1s ease;
+        }
+
+        /* Transcript styling improvements */
         .final-transcript {
             min-height: 24px;
+            line-height: 1.5;
         }
-        
+
         .interim-transcript {
             color: var(--interim-color);
             font-style: italic;
             min-height: 24px;
+            line-height: 1.5;
         }
-        
-        .error {
-            color: var(--error-color);
+
+        .final-transcript strong {
+            color: var(--secondary-color);
+        }
+
+        /* Improved message container */
+        .message-container {
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .message-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Permission alert */
+        .permission-alert {
+            background-color: var(--surface-color);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .permission-alert .icon {
+            margin-right: 0.8rem;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .permission-alert .content {
+            flex: 1;
+        }
+
+        .permission-alert h4 {
+            margin: 0 0 0.5rem 0;
+        }
+
+        .permission-alert p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .permission-alert .buttons {
+            margin-top: 0.8rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Audio controls */
+        .audio-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .mic-level {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--error-color);
+            animation: pulse 1.5s infinite ease-in-out;
+            margin-right: 0.5rem;
+        }
+
+        .mic-level.active {
+            background-color: var(--success-color);
         }
 
         header {
@@ -244,10 +352,13 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(0.8);
                 opacity: 0.6;
             }
+
             50% {
                 transform: scale(1.2);
                 opacity: 1;
@@ -265,9 +376,12 @@
         }
 
         @keyframes blink {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 0.6;
             }
+
             50% {
                 opacity: 1;
             }
@@ -314,15 +428,107 @@
             color: var(--text-color);
             opacity: 0.7;
         }
+
+        /* History Panel */
+        .history-panel {
+            position: fixed;
+            top: 60px;
+            right: 0;
+            width: 300px;
+            height: calc(100vh - 60px);
+            background-color: var(--panel-bg);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            transition: transform 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-panel.hidden {
+            transform: translateX(100%);
+        }
+
+        .history-header {
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .history-header button {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .history-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .history-item:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .history-item-title {
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-item-preview {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-date {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            margin-top: 0.2rem;
+        }
+
+        @media (max-width: 600px) {
+            .history-panel {
+                width: 100%;
+            }
+        }
     </style>
 </head>
+
 <body>
     <header>
         <div class="logo">
             <span>Claude Voice Assistant</span>
         </div>
         <div class="controls">
-            <button id="theme-toggle">
+            <button id="history-button" title="View Chat History">
+                <span>💬</span>
+            </button>
+            <button id="theme-toggle" title="Toggle Theme">
                 <span id="theme-icon">🌙</span>
             </button>
             <button id="start-button">
@@ -333,6 +539,22 @@
 
     <main>
         <div class="status" id="status">Ready to assist you. Click "Start Recording" to begin.</div>
+        <div id="history-panel" class="history-panel hidden">
+            <div class="history-header">
+                <h3>Chat History</h3>
+                <button id="close-history">×</button>
+            </div>
+            <div id="history-list" class="history-list">
+                <div class="loading">
+                    <div>Loading history</div>
+                    <div class="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="messages-container"></div>
     </main>
 
@@ -343,7 +565,7 @@
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // DOM Elements
             const startButton = document.getElementById('start-button');
             const themeToggle = document.getElementById('theme-toggle');
@@ -359,7 +581,7 @@
             let stream = null;
 
             // Theme toggle
-            themeToggle.addEventListener('click', function() {
+            themeToggle.addEventListener('click', function () {
                 document.body.classList.toggle('light-theme');
                 if (document.body.classList.contains('light-theme')) {
                     themeIcon.textContent = '☀️';
@@ -372,23 +594,23 @@
             async function setupAudioRecorder() {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    
+
                     mediaRecorder = new MediaRecorder(stream);
-                    
+
                     mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) {
                             audioChunks.push(event.data);
                         }
                     };
-                    
+
                     mediaRecorder.onstop = async () => {
                         if (audioChunks.length === 0) return;
-                        
+
                         // Process the recorded audio
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         processAudio(audioBlob);
                     };
-                    
+
                     return true;
                 } catch (error) {
                     console.error('Error setting up audio recorder:', error);
@@ -398,9 +620,9 @@
             }
 
             // Start/stop recording
-            startButton.addEventListener('click', async function() {
+            startButton.addEventListener('click', async function () {
                 if (isProcessing) return;
-                
+
                 if (isRecording) {
                     // Stop recording
                     stopRecording();
@@ -410,7 +632,7 @@
                         const setupSuccess = await setupAudioRecorder();
                         if (!setupSuccess) return;
                     }
-                    
+
                     // Initialize speech recognition if needed
                     if (!recognition) {
                         const speechSetupSuccess = setupSpeechRecognition();
@@ -419,7 +641,7 @@
                             statusElement.textContent = 'Live transcription not available, but recording will work.';
                         }
                     }
-                    
+
                     startRecording();
                 }
             });
@@ -428,7 +650,7 @@
                 // Start audio recording
                 audioChunks = [];
                 mediaRecorder.start();
-                
+
                 // Start speech recognition if available
                 if (recognition) {
                     try {
@@ -437,7 +659,7 @@
                         console.error('Error starting speech recognition:', e);
                     }
                 }
-                
+
                 isRecording = true;
                 startButton.innerHTML = '<span class="recording-indicator"></span>Stop Recording';
                 statusElement.textContent = 'Recording... Speak clearly.';
@@ -447,7 +669,7 @@
                 if (mediaRecorder && isRecording) {
                     // Stop audio recording
                     mediaRecorder.stop();
-                    
+
                     // Stop speech recognition if available
                     if (recognition) {
                         try {
@@ -456,7 +678,7 @@
                             console.error('Error stopping speech recognition:', e);
                         }
                     }
-                    
+
                     isRecording = false;
                     isProcessing = true;
                     startButton.textContent = 'Processing...';
@@ -483,18 +705,18 @@
                 recognition.interimResults = true;
                 recognition.lang = 'en-US';
 
-                recognition.onstart = function() {
+                recognition.onstart = function () {
                     finalTranscript = '';
                     interimTranscript = '';
-                    
+
                     // Create a new message container for live transcription
                     currentMessageId = Date.now().toString();
                     createLiveTranscriptionMessage(currentMessageId);
                 };
 
-                recognition.onresult = function(event) {
+                recognition.onresult = function (event) {
                     interimTranscript = '';
-                    
+
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
                         if (event.results[i].isFinal) {
                             finalTranscript += event.results[i][0].transcript;
@@ -502,17 +724,17 @@
                             interimTranscript += event.results[i][0].transcript;
                         }
                     }
-                    
+
                     // Update the live transcription
                     updateLiveTranscription(currentMessageId, finalTranscript, interimTranscript);
                 };
 
-                recognition.onerror = function(event) {
+                recognition.onerror = function (event) {
                     console.error('Speech recognition error:', event.error);
                     statusElement.textContent = `Error in speech recognition: ${event.error}`;
                 };
 
-                recognition.onend = function() {
+                recognition.onend = function () {
                     if (isRecording) {
                         // If still recording, restart recognition (sometimes it stops automatically)
                         recognition.start();
@@ -527,47 +749,47 @@
                 try {
                     // Use the existing transcription from the speech recognition
                     const transcription = finalTranscript || "No speech detected. Please try again.";
-                    
+
                     if (!transcription || transcription === "No speech detected. Please try again.") {
                         statusElement.textContent = 'No speech detected. Please try again.';
-                        
+
                         // Update the message to show error
                         const messageElement = document.getElementById(`message-${currentMessageId}`);
                         if (messageElement) {
-                            messageElement.querySelector('.message-content').innerHTML = 
+                            messageElement.querySelector('.message-content').innerHTML =
                                 '<p class="error">No speech detected. Please try again.</p>';
                         }
-                        
+
                         isProcessing = false;
                         startButton.textContent = 'Start Recording';
                         startButton.disabled = false;
                         return;
                     }
-                    
+
                     // Update status
                     statusElement.textContent = 'Sending to Claude...';
-                    
+
                     // Update the message to show loading
                     updateMessageToLoading(currentMessageId, transcription);
-                    
+
                     // Process with Claude via Puter.js
                     const startTime = Date.now();
-                    
+
                     // Stream the response for better UX
                     const response = await puter.ai.chat(transcription, {
                         model: 'claude-3-7-sonnet',
                         stream: true,
                         system: "You are Claude, an AI assistant. Respond concisely but thoroughly. Format important details in **bold** text using markdown. If asked for code, provide properly formatted code snippets using markdown code blocks with language specification. Be helpful, accurate, and clear."
                     });
-                    
+
                     // Start collecting the streamed response
                     let fullResponse = '';
                     let responseStarted = false;
-                    
+
                     for await (const part of response) {
                         if (part?.text) {
                             fullResponse += part.text;
-                            
+
                             if (!responseStarted) {
                                 // Update message to start showing the response
                                 updateMessageToStreamingResponse(currentMessageId, transcription, fullResponse);
@@ -578,23 +800,23 @@
                             }
                         }
                     }
-                    
+
                     // Calculate response time
                     const responseTime = Math.round((Date.now() - startTime) / 100) / 10;
-                    
+
                     // Finalize the response
                     finalizeResponse(currentMessageId, responseTime);
-                    
+
                 } catch (error) {
                     console.error('Error processing with Claude:', error);
                     statusElement.textContent = 'Error processing your request. Please try again.';
-                    
+
                     // Update the message to show error
                     const messageElement = document.getElementById(`message-${currentMessageId}`);
                     if (messageElement) {
                         const responseContent = messageElement.querySelector('.claude-response');
                         if (responseContent) {
-                            responseContent.innerHTML = 
+                            responseContent.innerHTML =
                                 '<p class="error">Error connecting to Claude. Please try again.</p>';
                         }
                     }
@@ -611,7 +833,7 @@
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message-container';
                 messageElement.id = `message-${id}`;
-                
+
                 messageElement.innerHTML = `
                     <div class="message-header">
                         <div>Live Transcription</div>
@@ -621,7 +843,7 @@
                         <p class="interim-transcript" style="color: gray; font-style: italic;"></p>
                     </div>
                 `;
-                
+
                 messagesContainer.prepend(messageElement);
             }
 
@@ -629,19 +851,37 @@
             function updateLiveTranscription(id, final, interim) {
                 const messageElement = document.getElementById(`message-${id}`);
                 if (!messageElement) return;
-                
+
                 const finalElement = messageElement.querySelector('.final-transcript');
                 const interimElement = messageElement.querySelector('.interim-transcript');
-                
-                if (finalElement) finalElement.textContent = final;
-                if (interimElement) interimElement.textContent = interim;
+
+                if (finalElement) {
+                    // Apply styling to make important words stand out
+                    let styledFinal = final;
+
+                    // Style any text between asterisks as important
+                    styledFinal = styledFinal.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+
+                    // Try to identify potential commands/keywords and make them bold
+                    const keywords = ['search', 'find', 'tell me', 'how to', 'what is', 'explain', 'who is', 'when did'];
+                    keywords.forEach(keyword => {
+                        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                        styledFinal = styledFinal.replace(regex, `<strong>${keyword}</strong>`);
+                    });
+
+                    finalElement.innerHTML = styledFinal || '&nbsp;';
+                }
+
+                if (interimElement) {
+                    interimElement.textContent = interim || '';
+                }
             }
 
             // Update message to loading state
             function updateMessageToLoading(id, transcription) {
                 const messageElement = document.getElementById(`message-${id}`);
                 if (!messageElement) return;
-                
+
                 messageElement.innerHTML = `
                     <div class="message-header">
                         <div>Your Question</div>
@@ -669,10 +909,10 @@
             function updateMessageToStreamingResponse(id, transcription, initialResponse) {
                 const messageElement = document.getElementById(`message-${id}`);
                 if (!messageElement) return;
-                
+
                 // Configure marked.js for syntax highlighting
                 marked.setOptions({
-                    highlight: function(code, lang) {
+                    highlight: function (code, lang) {
                         if (lang && hljs.getLanguage(lang)) {
                             return hljs.highlight(code, { language: lang }).value;
                         }
@@ -680,10 +920,10 @@
                     },
                     breaks: true
                 });
-                
+
                 // Format the initial response
                 const formattedResponse = marked.parse(initialResponse);
-                
+
                 messageElement.innerHTML = `
                     <div class="message-header">
                         <div>Your Question</div>
@@ -704,14 +944,14 @@
             function updateStreamingResponse(id, fullResponse) {
                 const messageElement = document.getElementById(`message-${id}`);
                 if (!messageElement) return;
-                
+
                 const responseElement = messageElement.querySelector('.claude-response');
                 if (!responseElement) return;
-                
+
                 // Format the response
                 const formattedResponse = marked.parse(fullResponse);
                 responseElement.innerHTML = formattedResponse;
-                
+
                 // Scroll to bottom of the response
                 responseElement.scrollTop = responseElement.scrollHeight;
             }
@@ -720,13 +960,13 @@
             function finalizeResponse(id, responseTime) {
                 const messageElement = document.getElementById(`message-${id}`);
                 if (!messageElement) return;
-                
+
                 // Add response time
                 const timeElement = document.createElement('div');
                 timeElement.className = 'response-time';
                 timeElement.textContent = `Response time: ${responseTime}s`;
                 messageElement.appendChild(timeElement);
-                
+
                 // Update status
                 statusElement.textContent = 'Ready for your next question.';
             }
@@ -736,7 +976,7 @@
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message-container';
                 messageElement.id = `message-${id}`;
-                
+
                 messageElement.innerHTML = `
                     <div class="message-header">
                         <div>Recording</div>
@@ -750,7 +990,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 messagesContainer.prepend(messageElement);
             }
 
@@ -758,10 +998,10 @@
             function updateMessageWithResponse(id, query, response, responseTime) {
                 const messageElement = document.getElementById(`message-${id}`);
                 if (!messageElement) return;
-                
+
                 // Configure marked.js for syntax highlighting
                 marked.setOptions({
-                    highlight: function(code, lang) {
+                    highlight: function (code, lang) {
                         if (lang && hljs.getLanguage(lang)) {
                             return hljs.highlight(code, { language: lang }).value;
                         }
@@ -769,10 +1009,10 @@
                     },
                     breaks: true
                 });
-                
+
                 // Format the response with markdown
                 const formattedResponse = marked.parse(response);
-                
+
                 // Update the message element
                 messageElement.innerHTML = `
                     <div class="message-header">
@@ -791,9 +1031,98 @@
                         Response time: ${responseTime}s
                     </div>
                 `;
-                
+
                 // Update status
                 statusElement.textContent = 'Ready for your next question.';
+            }
+
+            // Audio visualizer function
+            function setupAudioVisualizer(stream) {
+                try {
+                    // Create audio context
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const analyser = audioContext.createAnalyser();
+
+                    // Configure analyser
+                    analyser.fftSize = 256;
+                    analyser.minDecibels = -90;
+                    analyser.maxDecibels = -10;
+                    analyser.smoothingTimeConstant = 0.85;
+
+                    // Connect microphone to analyser
+                    const microphone = audioContext.createMediaStreamSource(stream);
+                    microphone.connect(analyser);
+
+                    // Get visualization data
+                    const bufferLength = analyser.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+
+                    // Animation function
+                    function visualize() {
+                        if (!isRecording) return;
+
+                        requestAnimationFrame(visualize);
+
+                        // Get current audio data
+                        analyser.getByteFrequencyData(dataArray);
+
+                        // Update visualization bars
+                        const bars = document.querySelectorAll('.audio-bar');
+                        const barCount = bars.length;
+
+                        for (let i = 0; i < barCount; i++) {
+                            // Calculate which FFT bin to use for this bar
+                            const index = Math.floor(i * bufferLength / barCount);
+
+                            // Get value and scale it (0-255 to 0-100%)
+                            let value = dataArray[index] / 255;
+
+                            // Amplify low values for better visualization of quiet sounds
+                            value = Math.pow(value, 0.8);
+
+                            // Convert to bar height
+                            const height = Math.max(3, Math.floor(value * 60));
+
+                            // Apply height to bar
+                            bars[i].style.height = `${height}px`;
+
+                            // Color based on intensity
+                            if (value > 0.6) {
+                                bars[i].style.backgroundColor = 'var(--error-color)';
+                            } else if (value > 0.3) {
+                                bars[i].style.backgroundColor = 'var(--secondary-color)';
+                            } else {
+                                bars[i].style.backgroundColor = 'var(--primary-color)';
+                            }
+                        }
+
+                        // Update mic level indicator
+                        const micLevel = document.querySelector('.mic-level');
+                        if (micLevel) {
+                            // Calculate average volume
+                            let sum = 0;
+                            for (let i = 0; i < bufferLength; i++) {
+                                sum += dataArray[i];
+                            }
+                            const average = sum / bufferLength / 255;
+
+                            // Update mic indicator
+                            if (average > 0.1) {
+                                micLevel.style.transform = `scale(${1 + average})`;
+                                micLevel.classList.add('active');
+                            } else {
+                                micLevel.style.transform = 'scale(1)';
+                                micLevel.classList.remove('active');
+                            }
+                        }
+                    }
+
+                    // Start visualization
+                    visualize();
+
+                } catch (error) {
+                    console.error('Error setting up audio visualizer:', error);
+                }
             }
 
             // Initial setup
@@ -801,4 +1130,5 @@
         });
     </script>
 </body>
+
 </html>
